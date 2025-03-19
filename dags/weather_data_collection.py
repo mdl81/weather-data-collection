@@ -25,11 +25,8 @@ dag = DAG(
     catchup=False,  # Prevent catching up on missed runs
 )
 
-# Global variable to store extracted data
-extracted_data = {}
-
-# Task 1: Extract
-def extract_weather_data(execution_date, **kwargs):
+# Extract
+def extract_weather_data(**kwargs):
     load_dotenv()
     api_key = os.getenv("OPENWEATHERMAP_API_KEY")
 
@@ -45,21 +42,18 @@ def extract_weather_data(execution_date, **kwargs):
     if response.status_code == 200:
         data = response.json()
         print("Data fetched successfully")
-        # Store the extracted data in XCom
         kwargs['ti'].xcom_push(key='weather_data', value=data)
     else:
         raise Exception(f"Failed to fetch data: {response.status_code}")
 
-# Task 2: Transform
+# Transform
 def transform_weather_data(execution_date, **kwargs):
-    # Retrieve the extracted data from XCom
     data = kwargs['ti'].xcom_pull(key='weather_data', task_ids='extract_weather_data')
     if not data:
         raise Exception("No data found for transformation")
 
     execution_time = execution_date.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Transform temperature data
     temp_data = {
         "datetime": [execution_time],
         "temp": [data["main"]["temp"]],
@@ -69,7 +63,6 @@ def transform_weather_data(execution_date, **kwargs):
         "pressure": [data["main"]["pressure"]]
     }
 
-    # Transform wind data
     wind_data = {
         "datetime": [execution_time],
         "speed": [data["wind"]["speed"]],
@@ -77,24 +70,19 @@ def transform_weather_data(execution_date, **kwargs):
         "gust": [data["wind"].get("gust", None)]
     }
 
-    # Store transformed data in XCom
     kwargs['ti'].xcom_push(key='temp_data', value=temp_data)
     kwargs['ti'].xcom_push(key='wind_data', value=wind_data)
 
-# Task 3: Load
+# Load
 def load_weather_data(execution_date, **kwargs):
-    # Retrieve transformed data from XCom
     temp_data = kwargs['ti'].xcom_pull(key='temp_data', task_ids='transform_weather_data')
     wind_data = kwargs['ti'].xcom_pull(key='wind_data', task_ids='transform_weather_data')
-
     if not temp_data or not wind_data:
         raise Exception("No transformed data found for loading")
 
-    # Convert to DataFrames
     temp_df = pd.DataFrame(temp_data)
     wind_df = pd.DataFrame(wind_data)
 
-    # Save to .parquet files
     date_str = execution_date.strftime('%Y_%m_%d')
     parquet_dir = "/opt/airflow/parquet_files"
     os.makedirs(parquet_dir, exist_ok=True)
@@ -114,7 +102,6 @@ def load_weather_data(execution_date, **kwargs):
 
     print("Data saved to parquet files")
 
-# Define the tasks
 extract_task = PythonOperator(
     task_id='extract_weather_data',
     python_callable=extract_weather_data,
@@ -136,5 +123,4 @@ load_task = PythonOperator(
     dag=dag,
 )
 
-# Set task dependencies
 extract_task >> transform_task >> load_task

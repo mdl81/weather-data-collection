@@ -20,8 +20,8 @@ dag = DAG(
     'weather_data_collection_etl',
     default_args=default_args,
     description='ETL pipeline to collect weather data for Minsk every hour',
-    schedule_interval='*/5 * * * *',  # Run every 5 minutes
-    # schedule_interval='0 * * * *',  # Run every hour at the start of the hour
+    # schedule_interval='*/5 * * * *',  # Run every 5 minutes
+    schedule_interval='0 * * * *',  # Run every hour at the start of the hour
     catchup=False,  # Prevent catching up on missed runs
 )
 

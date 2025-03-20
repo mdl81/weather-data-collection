@@ -1,19 +1,21 @@
-# weather-data-collection
-=======
 # Weather Data Collection with Airflow
 
-## Project Overview
-This project uses **Apache Airflow** to collect weather data for Minsk every hour. The data is fetched from the OpenWeatherMap API and saved as `.parquet` files for efficient storage and analysis.
+This project uses **Apache Airflow** to collect, process, and store weather data for Minsk. The data is fetched from the OpenWeatherMap API, transformed, and saved as `.parquet` files for efficient storage and analysis.
 
 ## Features
-- Fetches weather data (temperature, wind, etc.) for Minsk.
-- Saves data in `.parquet` format for efficient storage and processing.
+- **Extract**: Fetches weather data (temperature, wind, etc.) for Minsk from the OpenWeatherMap API.
+- **Transform**: Processes and cleans the extracted data.
+- **Load**: Saves the transformed data in `.parquet` format for efficient storage and processing.
 - Runs every hour at the start of the hour (`0 * * * *`).
 - Prevents fetching historical data by setting `catchup=False`.
+
+---
 
 ## Prerequisites
 1. **Docker** and **Docker Compose** installed.
 2. An OpenWeatherMap API key stored in a `.env` file.
+
+---
 
 ## Project Structure
 ```
